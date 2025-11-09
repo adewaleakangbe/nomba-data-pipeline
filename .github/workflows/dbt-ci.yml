@@ -74,10 +74,10 @@ jobs:
       run: dbt --version
 
     - name: Install dbt deps
-      run: dbt deps --profiles-dir ~/.dbt --project-dir .
+      run: dbt deps --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics.
 
     - name: Run dbt (compile + tests)
       run: |
-        dbt compile --profiles-dir ~/.dbt --project-dir .
-        dbt test --profiles-dir ~/.dbt --project-dir .
+        dbt compile --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics.
+        dbt test --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics.
       # Optional: to run models too, add dbt run --profiles-dir ~/.dbt --project-dir .
