@@ -64,10 +64,7 @@ jobs:
           psql -h localhost -U postgres -c "CREATE DATABASE nomba;" || true
           psql -h localhost -U postgres -d nomba -c "CREATE SCHEMA IF NOT EXISTS analytics;" || true
 
-      - name: Run Mongo → Postgres ETL
-        working-directory: ./services/mongo_to_postgres
-        run: |
-          python mongo_to_postgres.py
+   
 
       - name: Configure dbt profile from secret
         run: |
