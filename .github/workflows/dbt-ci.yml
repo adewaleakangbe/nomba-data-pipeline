@@ -77,9 +77,10 @@ jobs:
       working-directory: ./dbt/nomba_analytics
       run: dbt deps --profiles-dir ~/.dbt
 
-    - name: Run dbt (compile + tests)
-      working-directory: ./dbt/nomba_analytics
+    - name: Run dbt (compile + run + tests)
       run: |
-        dbt compile --profiles-dir ~/.dbt
-        dbt test --profiles-dir ~/.dbt
+        dbt compile --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics
+        dbt run --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics
+        dbt test --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics
+
 
