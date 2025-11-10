@@ -1,0 +1,11 @@
+nomba_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: airflow_db
+      user: airflow
+      password: airflow
+      port: 5432
+      dbname: nomba
+      schema: analytics

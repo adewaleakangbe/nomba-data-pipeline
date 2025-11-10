@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: warehouse
+    database: nomba
+    schema: analytics
+    tables:
+      - name: stg_mongo_user

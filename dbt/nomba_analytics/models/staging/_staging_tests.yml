@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_mongo_user
+    description: "Staging model for MongoDB user data ingested via CDC."
+    columns:
+      - name: source_id
+        description: "Unique identifier from the Mongo document."
+        tests:
+          - not_null
+          - unique
+
+      - name: updated_at
+        description: "Timestamp of last update from the source."
+        tests:
+          - not_null
+
