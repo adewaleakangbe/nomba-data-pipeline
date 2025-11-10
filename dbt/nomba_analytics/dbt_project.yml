@@ -21,9 +21,4 @@ models:
       +materialized: view
 
 # Configuring seeds
-seeds:
-  nomba_analytics:
-    stg_mongo_user:
-      file: seeds/stg_mongo_user.csv
-      header: true
 
