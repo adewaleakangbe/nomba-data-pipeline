@@ -76,6 +76,10 @@ jobs:
     - name: Install dbt deps
       working-directory: ./dbt/nomba_analytics
       run: dbt deps --profiles-dir ~/.dbt
+      
+    - name: Run dbt seeds
+      run: dbt seed --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics
+
 
     - name: Run dbt (compile + run + tests)
       run: |
