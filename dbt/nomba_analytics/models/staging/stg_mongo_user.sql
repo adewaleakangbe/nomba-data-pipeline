@@ -7,4 +7,4 @@ SELECT
     occupation,
     state,
     updated_at
-FROM {{ source('warehouse', 'stg_mongo_user') }}
+FROM {{ source('warehouse', 'analytics.stg_mongo_user') }}
