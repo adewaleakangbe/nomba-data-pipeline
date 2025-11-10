@@ -9,6 +9,7 @@ on:
 jobs:
   dbt-tests:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:13
@@ -16,92 +17,72 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: nomba
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d nomba"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
 
-      mongo:
-        image: mongo:5.0
-        options: >-
-          --health-cmd "mongo --eval 'db.adminCommand({ ping: 1 })' || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install system deps (psql & Mongo client)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y postgresql-client mongo-tools
+      - name: Install system deps (psql)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r services/mongo_to_postgres/requirements.txt
-        pip install dbt-core dbt-postgres
+      - name: Install dbt (core + postgres adapter)
+        run: |
+          python -m pip install --upgrade pip
+          pip install dbt-core dbt-postgres
 
-    - name: Wait for Postgres to be ready
-      env:
-        PGHOST: localhost
-        PGPORT: 5432
-        PGUSER: postgres
-        PGPASSWORD: postgres
-      run: |
-        for i in {1..20}; do
-          pg_isready -h localhost -p 5432 -U postgres && break
-          echo "Waiting for Postgres..."
-          sleep 2
-        done
+      - name: Wait for Postgres to be ready
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          for i in {1..20}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            sleep 1
+          done
 
-    - name: Wait for MongoDB to be ready
-      run: |
-        for i in {1..20}; do
-          mongo --host localhost --eval "db.adminCommand('ping')" && break
-          echo "Waiting for MongoDB..."
-          sleep 2
-        done
+      - name: Create DB/schema needed for dbt
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE nomba;" || true
+          psql -h localhost -U postgres -d nomba -c "CREATE SCHEMA IF NOT EXISTS analytics;" || true
 
-    - name: Create DB/schema needed for dbt
-      env:
-        PGHOST: localhost
-        PGPORT: 5432
-        PGUSER: postgres
-        PGPASSWORD: postgres
-      run: |
-        psql -h localhost -U postgres -c "CREATE DATABASE nomba;" || true
-        psql -h localhost -U postgres -d nomba -c "CREATE SCHEMA IF NOT EXISTS analytics;" || true
+   
 
-    - name: Run Mongo to Postgres ETL
-      run: |
-        python services/mongo_to_postgres/mongo_to_postgres.py
+      - name: Configure dbt profile from secret
+        run: |
+          mkdir -p ~/.dbt
+          echo "$DBT_PROFILE" > ~/.dbt/profiles.yml
+        env:
+          DBT_PROFILE: ${{ secrets.DBT_PROFILE }}
 
-    - name: Configure dbt profile from secret
-      run: |
-        mkdir -p ~/.dbt
-        echo "$DBT_PROFILE" > ~/.dbt/profiles.yml
-      env:
-        DBT_PROFILE: ${{ secrets.DBT_PROFILE }}
+      - name: Show dbt version
+        run: dbt --version
 
-    - name: Show dbt version
-      run: dbt --version
+      - name: Install dbt deps
+        working-directory: ./dbt/nomba_analytics
+        run: dbt deps --profiles-dir ~/.dbt
 
-    - name: Install dbt dependencies
-      working-directory: ./dbt/nomba_analytics
-      run: dbt deps --profiles-dir ~/.dbt
-
-    - name: Run dbt (compile + run + tests)
-      run: |
-        dbt compile --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics
-        dbt run --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics
-        dbt test --profiles-dir ~/.dbt --project-dir dbt/nomba_analytics
-
+      - name: Run dbt (compile + run + tests)
+        working-directory: ./dbt/nomba_analytics
+        run: |
+          dbt compile --profiles-dir ~/.dbt
+          dbt run --profiles-dir ~/.dbt
+          dbt test --profiles-dir ~/.dbt
