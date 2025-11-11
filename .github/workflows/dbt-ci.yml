@@ -64,6 +64,23 @@ jobs:
           psql -h localhost -U postgres -c "CREATE DATABASE nomba;" || true
           psql -h localhost -U postgres -d nomba -c "CREATE SCHEMA IF NOT EXISTS analytics;" || true
 
+      - name: Create required raw table for dbt
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d nomba -c "
+          CREATE TABLE IF NOT EXISTS analytics.stg_mongo_user (
+            source_id TEXT PRIMARY KEY,
+            first_name TEXT,
+            last_name TEXT,
+            occupation TEXT,
+            state TEXT,
+            updated_at TIMESTAMPTZ,
+            deleted_at TIMESTAMPTZ
+          );"
    
 
       - name: Configure dbt profile from secret
